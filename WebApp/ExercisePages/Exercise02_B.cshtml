@@ -1,0 +1,62 @@
+﻿@{
+    Layout = "~/_Layout.cshtml";
+    Page.Title = string.Format("Razor - {0}", "Exercise 02_B");
+
+    var artistName = Request.QueryString["artistName"];
+    if (string.IsNullOrEmpty(artistName)) {
+        Response.Redirect("Exercise02_A.cshtml");
+    }
+
+    var db = Database.Open("CHINOOK");
+    string cmdSql = "SELECT ArtistId, Name FROM Artists WHERE Name LIKE @0 ORDER BY Name";
+    var partialString = "%" + artistName + "%";
+    var results = db.Query(cmdSql, partialString);
+    db.Close();
+    <p>the amount of results is @results.Count()</p>
+}
+
+@section banner {
+    <h1>@Page.Title</h1>
+}
+
+@if (IsPost)
+{
+    var choicedArtist = Request.Form["artistsList"];
+    if (choicedArtist.Equals("0"))
+    {
+        <p style="color:firebrick">Select a Artist to view:</p>
+    }
+    else
+    {
+        db = Database.Open("CHINOOK");
+        var albumsSql = @"select AlbumId from Albums where ArtistId =@0";
+        var resultAlbums = db.Query(albumsSql, choicedArtist);
+        db.Close();
+        if (resultAlbums.Count() == 0)
+        {
+            <p style="color:firebrick">There are no Albums for the selected artist.</p>
+        }
+        else { 
+            Response.Redirect("Exercise02_C.cshtml?artistId=" + choicedArtist);
+        }
+    }
+}
+
+<form id="Excercise02_B" action="" method="post">
+    <div class="row">
+        <div class="offset-1">
+            <label id="artistsListLabel">Select Artiscts Name from the list:</label>&nbsp;&nbsp;
+            <select id="artistsList" name="artistsList">
+                <option value="0">Select ...</option>
+                @foreach (var item in results)
+                {
+                    <option value="@item.ArtistId">@item.Name</option>
+                }
+            </select>
+            &nbsp;&nbsp;
+            <button type="submit" id="searchBtn" name="searchBtn" value="submit" class="btn btn-primary">
+                View Albums
+            </button>
+        </div>
+    </div>
+</form>

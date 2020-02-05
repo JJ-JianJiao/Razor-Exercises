@@ -1,8 +1,90 @@
 ﻿@{
     Layout = "~/_Layout.cshtml";
     Page.Title = string.Format("Razor - {0}", "Exercise 01");
+    var customerName = Request.Form["CustomerName"];
+    var choice = "";
+    var reset = Request.Form["Reset"];
+    var theButton = Request.Form["buttons"];
 }
 
 @section banner {
     <h1>@Page.Title</h1>
 }
+
+@if (IsPost)
+{
+    choice = Request.Form["MealGroup"];
+    if (theButton.Equals("Reset", StringComparison.OrdinalIgnoreCase))
+    {
+        choice = "";
+        customerName = "";
+    }
+    else
+    {
+        if (customerName.IsEmpty() && !choice.IsEmpty())
+        {
+            <div class="offset-1">
+                <p><span style="color:firebrick">Can not submit an unvalid name.</span> </p>
+            </div>
+            //choice = "";
+        }
+
+        else if (choice.IsEmpty() && !customerName.IsEmpty())
+        {
+            <div class="offset-1">
+                <p><span style="color:firebrick">Make at least one selection from the platforms.</span> </p>
+            </div>
+            choice = "";
+        }
+        else if (!customerName.IsEmpty() && !choice.IsEmpty())
+        {
+            char[] delimiter = { ',' };
+            //char delimiter2 = ',';
+            <div class="offset-1">
+                <p>@customerName, I see that you have the following meal entries:</p>
+
+                <p>
+                    <ul>
+                        @foreach (var platform in choice.Split(delimiter))
+                        {
+                            <li>@platform</li>
+                        }
+                    </ul>
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="offset-1">
+                <p><span style="color:firebrick">Can not submit an unvalid name.</span> </p>
+                <p><span style="color:firebrick">Make at least one selection from the platforms.</span> </p>
+            </div>
+            choice = "";
+        }
+    }
+}
+
+<form id="EX01" action="" method="post">
+    <div class="row offset-1">
+        <div class="col-md-3">
+            <p>Customer Name</p>
+            <input type="text" name="CustomerName" value="@customerName" />
+        </div>
+        <div class="col-md-9">
+            <label id="labelChooseMeal">Choose your meal items</label><br />
+            <input type="checkbox" name="MealGroup" value="Steak"
+                   @(Array.IndexOf(choice.Split(','), "Steak") >= 0 ? "checked" : "") />Steak<br />
+            <input type="checkbox" name="MealGroup" value="Seafood"
+                   @(Array.IndexOf(choice.Split(','), "Seafood") >= 0 ? "checked" : "") />Seafood<br />
+            <input type="checkbox" name="MealGroup" value="Vegetables"
+                   @(Array.IndexOf(choice.Split(','), "Vegetables") >= 0 ? "checked" : "") />Vegetables<br />
+        </div>
+    </div>
+    <div class="row offset-1">
+        <div class="col-md-3">
+            <input class="btn btn-primary" id="buttons" type="submit" name="buttons" value="submit" />&nbsp;&nbsp;
+            <input class="btn btn-light" id="buttons" type="submit" name="buttons" value="reset" />
+        </div>
+
+    </div>
+</form>

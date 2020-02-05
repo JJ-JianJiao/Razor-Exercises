@@ -1,0 +1,55 @@
+﻿@{
+    Layout = "~/_Layout.cshtml";
+    Page.Title = string.Format("Razor - {0}", "Exercise 02_A");
+
+    //var artistId  = "";
+    var artistName = Request.Form["artistName"];
+    var searchBtn = Request.Form["searchBtn"];
+    var resetBtn = Request.Form["resetBtn"];
+}
+
+@section banner {
+    <h1>@Page.Title</h1>
+}
+
+@if(IsPost)
+{
+    if (resetBtn!=null)
+    {
+        artistName = "";
+        //artistId = "";
+    }
+    if (searchBtn != null) {
+        var db = Database.Open("CHINOOK");
+        string cmdSql = "SELECT ArtistId, Name FROM Artists WHERE Name LIKE @0 ORDER BY Name";
+        var partialString = "%" + artistName + "%";
+        var results = db.Query(cmdSql, partialString);
+        db.Close();
+        if (results.Count() == 0)
+        {
+            <p style="color:firebrick">
+                There is no artists named @artistName
+            </p>
+            artistName = "";
+            //artistId = "";
+        }
+        else {
+            Response.Redirect("Exercise02_B.cshtml?artistName=" + artistName);
+        }
+    }
+}
+
+
+<form id="Excercise02_A" action="" method="post">
+    <div class="row">
+        <div class="col-3">
+            <div class="offset-3">
+                <label id="lbArtistName">Enter a Artist Name:</label>&nbsp;&nbsp;
+                <input type="text" name="artistName" value="@artistName" placeholder="Artist Name" />
+                <br /><br />
+                <button type="submit" id="searchBtn" name="searchBtn" value="search" class="btn btn-primary">Search</button>&nbsp;&nbsp;
+                <button type="submit" id="resetBtn" name="resetBtn" value="reset" class="btn btn-light">Reset</button>
+            </div>
+        </div>
+    </div>
+</form>

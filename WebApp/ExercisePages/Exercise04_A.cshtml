@@ -21,11 +21,23 @@
     var artistList = db.Query(cmdSql);
     db.Close();
 
-    titleName = getTheAlbumInfo.Title.ToString();
-    artistId = getTheAlbumInfo.ArtistId == null ? "0" : getTheAlbumInfo.ArtistId.ToString();
-    albumYear = getTheAlbumInfo.ReleaseYear == null ? "" : getTheAlbumInfo.ReleaseYear.ToString();
-    realeaseLabel = getTheAlbumInfo.ReleaseLabel == null ? null : getTheAlbumInfo.ReleaseLabel.ToString();
-
+    try
+    {
+        titleName = getTheAlbumInfo.Title.ToString();
+        artistId = getTheAlbumInfo.ArtistId == null ? "0" : getTheAlbumInfo.ArtistId.ToString();
+        albumYear = getTheAlbumInfo.ReleaseYear == null ? "" : getTheAlbumInfo.ReleaseYear.ToString();
+        realeaseLabel = getTheAlbumInfo.ReleaseLabel == null ? null : getTheAlbumInfo.ReleaseLabel.ToString();
+    }
+    catch
+    {
+        <div class="col-12 text-center">
+            <p>
+                <span style="color:brown">
+                    You have already deleted OR Something is wrong. Please contact ADMINISTRATOR.
+                </span>
+            </p>
+        </div>
+    }
 
 
     Validation.Add("TitleName",
@@ -51,61 +63,104 @@
     realeaseLabel = Request.Form["ReleaseLabel"];
     artistId = Request.Form["ArtistList"];
     var thebutton = Request.Form["theButton"];
-    if (Validation.IsValid())
+
+
+    if (thebutton.Equals("backtosearch"))
     {
-        if (thebutton.Equals("backtosearch"))
+        Response.Redirect("Exercise04.cshtml");
+    }
+    else
+    {
+        if (Validation.IsValid())
         {
-            Response.Redirect("Exercise04.cshtml");
-        }
-        else if (thebutton.Equals("update"))
-        {
-            try
+
+            if (thebutton.Equals("update"))
             {
-                var sqlcommand = "UPDATE Albums SET "
-                                + "Title = @0, "
-                                + "ArtistId = @1, "
-                                + "ReleaseYear = @2, "
-                                + "ReleaseLabel = @3 "
-                                + "WHERE AlbumId = @4";
-                var rowsaffected = db.Execute(sqlcommand, titleName,
-                    albumYear.Equals("0") ? null : supplierid,
-                    categoryid.Equals("0") ? null : categoryid,
-                    string.IsNullOrEmpty(quantityperunit) ? null : quantityperunit,
-                    string.IsNullOrEmpty(unitprice) ? null : unitprice,
-                    string.IsNullOrEmpty(unitsinstock) ? null : unitsinstock,
-                    string.IsNullOrEmpty(unitsonorder) ? null : unitsonorder,
-                    string.IsNullOrEmpty(reorderlevel) ? null : reorderlevel,
-                    discontinued, productid);
-                if (rowsaffected > 0)
+                try
                 {
-                    <div class="col-12 text-center">
-                        <p style="color:green">
-                            Product has been UPDATED
-                        </p>
-                    </div>
+                    var sqlcommand = "UPDATE Albums SET "
+                                    + "Title = @0, "
+                                    + "ArtistId = @1, "
+                                    + "ReleaseYear = @2, "
+                                    + "ReleaseLabel = @3 "
+                                    + "WHERE AlbumId = @4";
+                    var rowsaffected = db.Execute(sqlcommand, titleName, artistId,
+                        albumYear, string.IsNullOrEmpty(realeaseLabel) ? null : realeaseLabel, albumID);
+                    if (rowsaffected > 0)
+                    {
+                        <div class="col-12 text-center">
+                            <p style="color:green">
+                                Album has been UPDATED
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-12 text-center">
+                            <p>
+                                <span style="color:brown">
+                                    Updating failed. Please contact Administrator.
+                                </span>
+                            </p>
+                        </div>
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
                     <div class="col-12 text-center">
-                        <p>
-                            <span style="color:brown">
-                                Product not found on file. Update not done. Return to product search for new product.
-                            </span>
-                            <a href="~/SamplePages/ProductSearch.cshtml"> go to search ....</a>
+                        <p style="color:firebrick; font-size:large">
+                            Processing error: @ex.Message
                         </p>
                     </div>
                 }
             }
-            catch (Exception ex)
+            else if (thebutton.Equals("delete"))
             {
-                <div class="col-12 text-center">
-                    <p style="color:firebrick; font-size:large">
-                        Processing error: @ex.Message
-                    </p>
-                </div>
+                try
+                {
+                    var deleteRelatedTrackStatement = "Delete Tracks WHERE AlbumId = @0";
+                    var deleteAlbumStatement = "Delete Albums WHERE AlbumId = @0";
+                    var tableTrackAffected = db.Execute(deleteRelatedTrackStatement, albumID);
+                    var tableAlbumAffected = db.Execute(deleteAlbumStatement, albumID);
+                    if (tableTrackAffected >= 1 && tableAlbumAffected == 1)
+                    {
+                        <div class="col-12 text-center">
+                            <p style="color:green">
+                                Album has been DELETED.
+
+                            </p>
+                        </div>
+                        albumID = "";
+                        titleName = "";
+                        albumYear = "";
+                        realeaseLabel = "";
+                        artistId = "";
+                    }
+                    else
+                    {
+                        <div class="col-12 text-center">
+                            <p>
+                                <span style="color:brown">
+                                    Deleting failed. Please contact Administrator.
+                                </span>
+                            </p>
+                        </div>
+                    }
+                }
+                catch (Exception ex)
+                {
+                    <div class="col-12 text-center">
+                        <p style="color:firebrick; font-size:large">
+                            Processing error: @ex.Message
+                        </p>
+                    </div>
+                }
             }
+
         }
     }
+
+
 }
 
 <div class="row offset-1">
@@ -120,7 +175,7 @@
             <label for="AlbumId">AlbumId:</label>
             <input type="text" name="AlbumId" id="AlbumId" value="@albumID" readonly /><br />
             <label for="TitleName">Title:</label>
-            <input type="text" name="TitleName" id="TitleName" value="@titleName" required /><br />
+            <input type="text" name="TitleName" id="TitleName" value="@titleName" /><br />
             <label for="ArtistList">Artist</label>
             <select id="ArtistList" name="ArtistList" required>
                 <option value="0">Select an Artist</option>
@@ -158,4 +213,14 @@
             </button>
         </div>
     </div>
+    <script type="text/javascript">
+        document.getElementById("theUpdate").onclick = ConfirmDiscontinue;
+        function ConfirmDiscontinue() {
+            return confirm("Are you sure you want to update the ALUMN < @titleName > ?");
+        }
+        document.getElementById("theDelete").onclick = ConfirmDelete;
+        function ConfirmDelete() {
+            return confirm("Are you sure you want to DELETE the ALUMN < @titleName > ? It will also delete all the related Tracks!!!");
+        }
+    </script>
 </form>

@@ -1,6 +1,6 @@
 ﻿@{
     Layout = "~/_Layout.cshtml";
-    Page.Title = string.Format("Razor - {0}", "Exercise 02_A");
+    Page.Title = string.Format("Razor - {0}", "Exercise 02_A ExampleCase Iron Maiden");
 
     //var artistId  = "";
     var artistName = Request.Form["artistName"];
@@ -19,7 +19,7 @@
         artistName = "";
         //artistId = "";
     }
-    if (searchBtn != null) {
+    else if (searchBtn != null) {
         var db = Database.Open("CHINOOK");
         string cmdSql = "SELECT ArtistId, Name FROM Artists WHERE Name LIKE @0 ORDER BY Name";
         var partialString = "%" + artistName + "%";

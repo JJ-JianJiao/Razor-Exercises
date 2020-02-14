@@ -1,30 +1,57 @@
 ﻿@{
     Layout = "~/_Layout.cshtml";
-    Page.Title = string.Format("Razor - {0}", "Exercise 02_C");
+    //Page.Title = string.Format("Razor - {0}", "Exercise 02_C");
 
 
     var artistId = Request.QueryString["artistId"];
-    if (string.IsNullOrEmpty(artistId)) {
+    var titleName = Request.QueryString["titleName"];
+    string albumsSqlCmd = "";
+    string getArtistNameCmd = "";
+    string artistName = "";
+    string partialPara = "";
+    bool isExercise02 = true;
+    string displayHead = "";
+    if (string.IsNullOrEmpty(artistId) && string.IsNullOrEmpty(titleName) )
+    {
         Response.Redirect("Exercise02_B.cshtml");
     }
 
     var db = Database.Open("CHINOOK");
-    var albumsSqlCmd = @"Select 
-                        Albums.AlbumId, 
-                        Albums.title, 
-                        Albums.ReleaseYear, 
-                        Albums.ReleaseLabel, 
-                        Artists.ArtistId, 
-                        Artists.Name 
-                        from Albums, Artists
-                        where
-                        Albums.ArtistId = @0 
-                        AND Artists.ArtistId = @0
-                        Order by Albums.title";
+    if (!string.IsNullOrEmpty(artistId))
+    {
+        albumsSqlCmd = @"Select Albums.AlbumId,Albums.title,Albums.ReleaseYear,Albums.ReleaseLabel,Artists.ArtistId,Artists.Name from Albums, Artists where Albums.ArtistId = @0 AND Artists.ArtistId = @0 Order by Albums.title";
 
-    var getArtistNameCmd = @"Select name from artists where artistId =@0";
-    var artistName = db.QueryValue(getArtistNameCmd, artistId);
-    var resultsAblums = db.Query(albumsSqlCmd, artistId);
+        getArtistNameCmd = @"Select name from artists where artistId =@0";
+        partialPara = artistId;
+        isExercise02 = true;
+        displayHead = "Exercise 02_C";
+
+    }
+    else if (!string.IsNullOrEmpty(titleName)) {
+        albumsSqlCmd = @"Select 
+                            Albums.AlbumId, 
+                            Albums.title, 
+                            Albums.ReleaseYear, 
+                            Albums.ReleaseLabel, 
+                            Albums.ArtistId,
+                            Artists.Name
+                            from Albums, Artists
+                            where
+                            Albums.title like @0 
+                            and Albums.ArtistId = Artists.ArtistId
+                            Order by Albums.title";
+        partialPara = "%" + titleName + "%";
+        isExercise02 = false;
+        displayHead = "Exercise 04_B";
+        //getArtistNameCmd = @"Select name from artists where artistId =@0";
+    }
+
+    Page.Title = string.Format("Razor - {0}", displayHead);
+    if (!getArtistNameCmd.Equals("")&&isExercise02) {
+        artistName = db.QueryValue(getArtistNameCmd, artistId);
+
+    }
+    var resultsAblums = db.Query(albumsSqlCmd, partialPara);
     var arr = resultsAblums.ToArray();
     string a = arr.ToString();
     db.Close();
@@ -39,19 +66,39 @@
 
 
 <div class="offset-1">
-    <h3>Albums for Artist:  @artistName</h3>
-    <div class="col-11">
+    @if (isExercise02) { 
+        <h3>Albums for Artist:  @artistName</h3>
+    }
+<div class="col-11">
+    @if (isExercise02)
+    {
         @gridView.GetHtml(
-            tableStyle:"table table-striped table-bordered table-hover",
-            mode:WebGridPagerModes.All,
-            firstText:"Start",
-            lastText:"End",
-            columns:gridView.Columns(
-                gridView.Column(columnName:"Title", header:"Albumn Title"),
-                gridView.Column(columnName:"ReleaseYear", header:"Release Year"),
-                gridView.Column(columnName:"ReleaseLabel", header:"Release Label")
-                //gridView.Column(columnName:"Name", header:"Artist")
+            tableStyle: "table table-striped table-bordered table-hover",
+            mode: WebGridPagerModes.All,
+            firstText: "Start",
+            lastText: "End",
+            columns: gridView.Columns(
+                gridView.Column(columnName: "Title", header: "Albumn Title"),
+                gridView.Column(columnName: "ReleaseYear", header: "Release Year"),
+                gridView.Column(columnName: "ReleaseLabel", header: "Release Label")
             )
-       )
-    </div>
+        )
+    }
+    else
+    {
+        @gridView.GetHtml(
+        tableStyle: "table table-striped table-bordered table-hover",
+        mode: WebGridPagerModes.All,
+        firstText: "Start",
+        lastText: "End",
+        columns: gridView.Columns(
+            gridView.Column(columnName: "Title", header: "Albumn Title"),
+            gridView.Column(columnName: "ReleaseYear", header: "Release Year"),
+            gridView.Column(columnName: "ReleaseLabel", header: "Release Label"),
+            gridView.Column(columnName: "Name", header: "Artist Name"),
+            gridView.Column(header:"", format:@<text><a href="~/ExercisePages/Exercise04_A.cshtml?AlbumId=@item.AlbumId">Edit</a></text>)
+        )
+    )
+    }
+</div>
 </div>

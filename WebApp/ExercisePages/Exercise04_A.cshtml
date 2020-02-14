@@ -1,0 +1,161 @@
+﻿@{
+    Layout = "~/_Layout.cshtml";
+    Page.Title = string.Format("Razor - {0}", "Exercise 04_A - Update/Delete");
+
+    var titleName = "";
+    string albumYear = DateTime.Now.Year.ToString(); ;
+    var realeaseLabel = "";
+    var artistId = "";
+
+    var albumID = Request.QueryString["AlbumId"];
+    if (albumID.IsEmpty())
+    {
+        Response.Redirect("Exercise04.cshtml");
+    }
+
+
+    var db = Database.Open("CHINOOK");
+    string cmdSql = "SELECT ArtistId, Name FROM Artists ORDER BY Name";
+    string selectedAlbumId = @"select AlbumId, Title, ArtistId, ReleaseYear, ReleaseLabel from Albums where AlbumId = @0";
+    var getTheAlbumInfo = db.QuerySingle(selectedAlbumId, albumID);
+    var artistList = db.Query(cmdSql);
+    db.Close();
+
+    titleName = getTheAlbumInfo.Title.ToString();
+    artistId = getTheAlbumInfo.ArtistId == null ? "0" : getTheAlbumInfo.ArtistId.ToString();
+    albumYear = getTheAlbumInfo.ReleaseYear == null ? "" : getTheAlbumInfo.ReleaseYear.ToString();
+    realeaseLabel = getTheAlbumInfo.ReleaseLabel == null ? null : getTheAlbumInfo.ReleaseLabel.ToString();
+
+
+
+    Validation.Add("TitleName",
+        Validator.Required("Title name is required"),
+        Validator.StringLength(160, 1, "Title name is limited to 160 characters"));
+    Validation.Add("AlbumYear",
+        Validator.Required("Album Year is required"),
+        Validator.Integer("Years must be a number."),
+        Validator.Range(1950, DateTime.Now.Year, $"Years must be between 1950 and {DateTime.Now.Year}"));
+    Validation.Add("ReleaseLabel",
+        Validator.StringLength(50, 0, "Release Label is limited to 160 characters"));
+}
+
+@section banner {
+    <h1>@Page.Title</h1>
+}
+
+@if (IsPost)
+{
+    albumID = Request.Form["AlbumId"];
+    titleName = Request.Form["TitleName"];
+    albumYear = Request.Form["AlbumYear"];
+    realeaseLabel = Request.Form["ReleaseLabel"];
+    artistId = Request.Form["ArtistList"];
+    var thebutton = Request.Form["theButton"];
+    if (Validation.IsValid())
+    {
+        if (thebutton.Equals("backtosearch"))
+        {
+            Response.Redirect("Exercise04.cshtml");
+        }
+        else if (thebutton.Equals("update"))
+        {
+            try
+            {
+                var sqlcommand = "UPDATE Albums SET "
+                                + "Title = @0, "
+                                + "ArtistId = @1, "
+                                + "ReleaseYear = @2, "
+                                + "ReleaseLabel = @3 "
+                                + "WHERE AlbumId = @4";
+                var rowsaffected = db.Execute(sqlcommand, titleName,
+                    albumYear.Equals("0") ? null : supplierid,
+                    categoryid.Equals("0") ? null : categoryid,
+                    string.IsNullOrEmpty(quantityperunit) ? null : quantityperunit,
+                    string.IsNullOrEmpty(unitprice) ? null : unitprice,
+                    string.IsNullOrEmpty(unitsinstock) ? null : unitsinstock,
+                    string.IsNullOrEmpty(unitsonorder) ? null : unitsonorder,
+                    string.IsNullOrEmpty(reorderlevel) ? null : reorderlevel,
+                    discontinued, productid);
+                if (rowsaffected > 0)
+                {
+                    <div class="col-12 text-center">
+                        <p style="color:green">
+                            Product has been UPDATED
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12 text-center">
+                        <p>
+                            <span style="color:brown">
+                                Product not found on file. Update not done. Return to product search for new product.
+                            </span>
+                            <a href="~/SamplePages/ProductSearch.cshtml"> go to search ....</a>
+                        </p>
+                    </div>
+                }
+            }
+            catch (Exception ex)
+            {
+                <div class="col-12 text-center">
+                    <p style="color:firebrick; font-size:large">
+                        Processing error: @ex.Message
+                    </p>
+                </div>
+            }
+        }
+    }
+}
+
+<div class="row offset-1">
+    <p style="color:darkslateblue">
+        @Html.ValidationSummary()
+    </p>
+</div>
+
+<form id="Excercise04_A" action="" method="post">
+    <div class="row offset-1">
+        <div class="col-xl-9 text-md-left">
+            <label for="AlbumId">AlbumId:</label>
+            <input type="text" name="AlbumId" id="AlbumId" value="@albumID" readonly /><br />
+            <label for="TitleName">Title:</label>
+            <input type="text" name="TitleName" id="TitleName" value="@titleName" required /><br />
+            <label for="ArtistList">Artist</label>
+            <select id="ArtistList" name="ArtistList" required>
+                <option value="0">Select an Artist</option>
+                @foreach (var artist in artistList)
+                {
+                    if (artistId == artist.artistId.ToString())
+                    {
+                        <option value="@artist.artistId" selected>@artist.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@artist.artistId">@artist.Name</option>
+                    }
+                }
+            </select><br />
+            <label for="AlbumYear">Year:</label>
+            <input type="number" name="AlbumYear" id="AlbumYear" value="@albumYear" min="1950" /><br />
+            <label for="ReleaseLabel">Release Label:</label>
+            <input type="text" name="ReleaseLabel" id="ReleaseLabel" value="@realeaseLabel" />
+        </div>
+    </div>
+    <div class="row offset-1">
+        <div class="col-xl-6 text-md-left">
+            <button type="submit" name="theButton" id="theUpdate" class="btn btn-primary"
+                    value="update">
+                Update
+            </button>&nbsp;&nbsp;&nbsp;
+            <button type="submit" name="theButton" id="theDelete" class="btn btn-primary" formnovalidate
+                    value="delete">
+                Delete Record
+            </button>&nbsp;&nbsp;&nbsp;
+            <button type="submit" name="theButton" id="theCancel" class="btn btn-primary" formnovalidate
+                    value="backtosearch">
+                Back to Search
+            </button>
+        </div>
+    </div>
+</form>

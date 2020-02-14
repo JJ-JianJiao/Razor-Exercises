@@ -1,0 +1,69 @@
+﻿@{
+    Layout = "~/_Layout.cshtml";
+    Page.Title = string.Format("Razor - {0}", "Exercise 04");
+
+    var titleName = "";
+    var titleId = "";
+
+
+    string cmdSql = "SELECT * FROM Albums where Title like @0 ORDER BY Title";
+    //var db = Database.Open("CHINOOK");
+    //var artistList = db.Query(cmdSql);
+    //db.Close();
+    Validation.Add("TitleSearchText",
+        Validator.Required("Title name is required"),
+        Validator.StringLength(160, 1, "Title name is limited to 160 characters"));
+}
+@section banner {
+    <h1>@Page.Title</h1>
+}
+
+@if (IsPost)
+{
+
+    titleName = Request.Form["TitleSearchText"];
+    var FormBtn = Request.Form["SearchTitleBtn"];
+    var partialcmd = "%" + titleName + "%";
+    if (Validation.IsValid()) { 
+        if (!String.IsNullOrEmpty(FormBtn))
+        {
+            try
+            {
+                var db = Database.Open("CHINOOK");
+                var albumList = db.Query(cmdSql, partialcmd);
+                db.Close();
+                if (albumList.Count() > 0)
+                {
+                    Response.Redirect("Exercise02_C.cshtml?titleName=" + titleName);
+                }
+                else
+                {
+                    throw new Exception($"Can not find the album named {@titleName}");
+                }
+            }
+            catch (Exception e)
+            {
+                <div class="row offset-1">
+                    <p style="color:darkslateblue">
+                        @e.Message
+                    </p>
+                </div>
+            }
+        }
+
+    }
+}
+
+<div class="row offset-1">
+    <p style="color:darkslateblue">
+        @Html.ValidationSummary()
+    </p>
+</div>
+
+<form id="Excercise03" action="" method="post">
+    <div class="col-sm-3">
+        <label for="TitleSearchText">Title Name: </label>
+        <input type="text" name="TitleSearchText" id="TitleSearchText" value="@titleName"><br /><br />
+        <button type="submit" class="btn btn-primary" name="SearchTitleBtn" id="SearchTitleBtn" value="Search">Search</button>
+    </div><br />
+</form>
